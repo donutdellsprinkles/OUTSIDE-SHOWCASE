@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TREATMENT CENTER</title>
+    <title>Dialogue and Character Movement</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         .character_spritesheet {
@@ -104,12 +104,14 @@
         var characterX = -15;
         var characterY = 75;
         var held_directions = [];
-        var characterSpeed = 0.25;
+        var characterSpeed = 80;
 
         let isTyping = false;
         let currentDialogueIndex = 0;
         let currentDialogueSet = [];
         let isDialogueActive = false;
+        
+        let lastTimestamp = 0;
 
         const interactablesData = [
             {
@@ -342,9 +344,13 @@
             69: "interact"
         }
 
-        const placeCharacter = () => {
+        const placeCharacter = (timestamp) => {
             if (isDialogueActive) return;
 
+            const delta = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+
+            const moveSpeed = characterSpeed * delta;
             var pixelSize = getPixelSize();
 
             const held_direction = held_directions[0];
@@ -352,10 +358,10 @@
             let newCharacterY = characterY;
 
             if (held_direction) {
-                if (held_direction === directions.right) { newCharacterX += characterSpeed; }
-                if (held_direction === directions.left) { newCharacterX -= characterSpeed; }
-                if (held_direction === directions.down) { newCharacterY += characterSpeed; }
-                if (held_direction === directions.up) { newCharacterY -= characterSpeed; }
+                if (held_direction === directions.right) { newCharacterX += moveSpeed; }
+                if (held_direction === directions.left) { newCharacterX -= moveSpeed; }
+                if (held_direction === directions.down) { newCharacterY += moveSpeed; }
+                if (held_direction === directions.up) { newCharacterY -= moveSpeed; }
                 character.setAttribute("facing", held_direction);
             }
             character.setAttribute("walking", held_direction ? "true" : "false");
@@ -402,13 +408,11 @@
             character.style.transform = `translate3d( ${characterX * pixelSize}px, ${characterY * pixelSize}px, 0 )`;
         }
 
-        const step = () => {
-            placeCharacter();
-            window.requestAnimationFrame(() => {
-                step();
-            })
+        const step = (timestamp) => {
+            placeCharacter(timestamp);
+            window.requestAnimationFrame(step);
         }
-        step();
+        window.requestAnimationFrame(step);
 
         document.addEventListener("keydown", (e) => {
             const dir = keys[e.which];
