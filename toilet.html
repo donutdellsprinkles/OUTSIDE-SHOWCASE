@@ -118,7 +118,7 @@
         var characterX = 320; 
         var characterY = 54; 
         var held_directions = [];
-        var characterSpeed = 0.25; 
+        var characterSpeed = 80; // Adjusted for Delta Time
 
         let isTyping = false;
         let currentDialogueIndex = 0;
@@ -213,6 +213,8 @@
                     return ChangeColor;
                 case "move":
                     return move;
+                case "flush": // Added the new function here
+                    return flush;
                 default:
                     return null; 
             }
@@ -358,22 +360,26 @@
             69: "interact" // 'E' key for interaction
         }
 
-        const placeCharacter = () => {
+        // --- DELTA TIME VARIABLES ---
+        let lastTime = 0;
+
+        const placeCharacter = (deltaTime) => {
             if (isDialogueActive) return; // Prevent movement during dialogue
 
-            var pixelSize = getPixelSize(); // Reverted to var as per original
+            var pixelSize = getPixelSize(); 
 
             const held_direction = held_directions[0];
             if (held_direction) {
-                if (held_direction === directions.right) { characterX += characterSpeed; }
-                if (held_direction === directions.left) { characterX -= characterSpeed; }
-                if (held_direction === directions.down) { characterY += characterSpeed; }
-                if (held_direction === directions.up) { characterY -= characterSpeed; }
+                const distanceToMove = characterSpeed * deltaTime;
+                if (held_direction === directions.right) { characterX += distanceToMove; }
+                if (held_direction === directions.left) { characterX -= distanceToMove; }
+                if (held_direction === directions.down) { characterY += distanceToMove; }
+                if (held_direction === directions.up) { characterY -= distanceToMove; }
                 character.setAttribute("facing", held_direction);
             }
             character.setAttribute("walking", held_direction ? "true" : "false");
 
-            // --- **REVERTED TO ORIGINAL LIMITS** ---
+            
             var leftLimit = -8;
             var rightLimit = (16 * 11) + 8;
             var topLimit = -8 + 32;
@@ -393,13 +399,16 @@
         }
 
         // --- Game Loop ---
-        const step = () => {
-            placeCharacter();
-            window.requestAnimationFrame(() => {
-                step();
+        const step = (currentTime) => {
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            placeCharacter(deltaTime);
+            window.requestAnimationFrame((time) => {
+                step(time);
             })
         }
-        step(); 
+        step(0); 
 
         // --- Keyboard Input Handling ---
         document.addEventListener("keydown", (e) => {
