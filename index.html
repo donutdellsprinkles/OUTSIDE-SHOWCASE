@@ -1,0 +1,107 @@
+<html>
+    <head>
+        <title>OUTSIDE</title>
+    </head>
+    <!-- later include like a proper image art for the game tab in the head section -->
+
+    <body>
+        <div style="display: flex; flex-direction: column; align-items: center;"  id="container">
+            <img id="title" style="image-rendering: pixelated; height: 448px; width: 448px; margin-top: 40%;" src="start2.png">
+            <img id="zonut" style="height: 448px; width: 448px; margin-top: 40%; display: none;" src="zonut.png">
+            <button id="start"></button>
+        </div>
+    </body>
+    <style>
+        body {
+            background-color: black;
+            display: grid; place-items: center;
+            
+        }
+       
+        #start {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            height: 400px;
+            width: 300px;
+            position: absolute;
+            margin-top: 15%;
+            background-color: transparent;
+        }
+
+        #title {
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+    </style>
+        
+    <script>
+       var button = document.getElementById('start');
+       var ClickCount = 0;
+       const image = document.getElementById('title');
+       button.onclick =()=> {
+       
+        
+        ClickCount++;
+    
+    switch (ClickCount) {
+        case 1:
+       const sound1 = new Audio('sound1.wav');
+       sound1.play();
+        image.style.transform = "rotate(45deg)";
+          
+        ;
+       
+        break;
+
+        case 2:
+        const sound2 = new Audio('random.wav');
+        sound2.play();
+        image.style.transform = "rotate(90deg)";
+
+        ;
+       
+        break;
+
+        case 3:
+        const sound3 = new Audio('sound3.wav');
+        sound3.play();
+        image.style.transform = "rotate(135deg)";
+
+        break;
+
+        case 4: 
+        const sound4 = new Audio('sound4.wav');
+        sound4.play();
+        image.style.transform = "rotate(180deg)";
+
+        setTimeout(function() {
+          setTimeout(function() {
+            const sound5 = new Audio('sound5.wav');
+            sound5.play();
+            document.getElementById('title').style.display = "none";
+            setTimeout(function() {
+                document.getElementById('zonut').style.display = "block";
+                document.getElementById('start').style.display = "none";
+                const sound6 = new Audio('sound6.wav');
+                sound6.play();
+            },5000)
+          },5000)
+            image.style.transform = "translateY(500%)";
+
+             setTimeout(function () {
+            window.location.href = 'tips.html'; 
+          }, 17000);
+          
+        }, 3000)
+
+        break;
+
+        
+    }
+       }
+        
+    function handleClick() {
+    };
+    </script>
+
+</html>

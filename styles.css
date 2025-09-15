@@ -1,0 +1,266 @@
+/* Use for later, incase styles get too big and they are shared between different places for now I am just gonna include simple stuff */
+
+    /* Dialogue: */
+
+       @font-face {
+    font-family: pixel;
+    src: url(PixelNarrativeDEMO.ttf)
+}
+
+    p {
+        font-family: pixel;
+        color: white;
+    }
+
+    .directions {
+        position: absolute;
+        
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    }
+
+ .dialogue-box {
+            width: 400px;
+            padding: 20px;
+            border: 2px solid white;
+            background-color: rgba(0, 0, 0, 0.8);
+            position: absolute;
+            left: 2%;
+            
+            z-index: 10; /* Ensure it's above game elements */
+            color: white; /* Ensure text is visible */
+        }
+       
+        .next-button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: white;
+            color: black;
+            border: none;
+            cursor: pointer;
+        }
+        .next-button:hover:not(:disabled) {
+            background-color: #ddd;
+        }
+        .next-button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Inventory: */
+
+        .inventory {
+            position: absolute;
+            z-index: 11;
+            right: 2%;
+            width: 20%;
+            height: 80%;
+            outline: 1px solid rgba(255, 255, 255, 0.998); 
+            border-radius: 6px; 
+            padding: 10px;
+            background-color: #0F0F0F; 
+            color: #F0F0F0; 
+            /* Remake this later it really sucks, hmmm I am trying to think of like a replacement maybe think of everedeep aurora?? */
+            padding-top: 10px;
+            padding-bottom: 10px;
+
+           
+            font-family: Arial, sans-serif;
+        }
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+
+
+         :root {
+            --pixel-size: 2px;
+            --grid-cell: calc( var(--pixel-size) * 16);
+            --bg: black;
+        }
+        @media( min-width: 700px ) {
+            :root {
+                --pixel-size: 3px;
+            }
+        }
+        @media( min-width: 1000px ) {
+            :root {
+                --pixel-size: 4px;
+            }
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars from showing */
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            color: white;
+            position: relative; /* For absolute positioning of dialogue box */
+            transition: background-color 6s ease-in-out;
+        }
+
+        .pixel-art {
+            image-rendering: pixelated;
+        }
+
+        .frame {
+            /* This is just for Pen decoration */
+            width: calc(var(--pixel-size) * 160);
+            height: calc(var(--pixel-size) * 144);
+            outline: var(--pixel-size) solid #fff;
+            z-index:1;
+            position:relative;
+            transition: all 3s ease-in-out;
+        }
+
+        .camera {
+            width: calc(var(--pixel-size) * 160);
+            height: calc(var(--pixel-size) * 144);
+            overflow: hidden;
+            background: #5290b3;
+            position:relative;
+        }
+
+        .map {
+            image-rendering: pixelated;
+            background-image: url("area.png"); /* Ensure this path is correct */
+            background-size: 100%;
+            width: calc(13 * var(--grid-cell));
+            height: calc(10 * var(--grid-cell));
+            position: relative;
+        }
+
+        .character {
+            width: calc( var(--grid-cell)* 2 );
+            height: calc( var(--grid-cell)* 2 );
+            position: absolute;
+            overflow:hidden;
+            z-index: 10;
+        }
+
+        .shadow {
+            width: calc( var(--grid-cell)* 2 );
+            height: calc( var(--grid-cell)* 2 );
+            position: absolute;
+            left:0;
+            top:0;
+            background: url("https://assets.codepen.io/21542/DemoRpgCharacterShadow.png") no-repeat no-repeat;
+            background-size: 100%;
+        }
+
+        /* .character_spritesheet { 
+            position: absolute;
+            background: url("https://assets.codepen.io/21542/DemoRpgCharacter.png") no-repeat no-repeat;
+            background-size: 100%;
+            width: calc( var(--grid-cell)* 8 );
+            height: calc( var(--grid-cell)* 8 );
+        }
+            */
+            /* Just keeping this here just in case to like reuse stuff, maybe.... the main character will be changed for specific segments who knows... */
+
+        .character[facing="right"] .character_spritesheet {
+            background-position-y: calc( var(--pixel-size) * -32 );
+        }
+        .character[facing="up"] .character_spritesheet {
+            background-position-y: calc( var(--pixel-size) * -64 );
+        }
+        .character[facing="left"] .character_spritesheet {
+            background-position-y: calc( var(--pixel-size) * -96 );
+        }
+        .character[walking="true"] .character_spritesheet {
+            animation: walkAnimation 0.6s steps(4) infinite;
+        }
+
+        @keyframes walkAnimation {
+            from {
+                transform: translate3d(0%,0%,0);
+            }
+            to {
+                transform: translate3d(-100%,0%,0);
+            }
+        }
+        .corner_topleft,
+        .corner_topright,
+        .corner_bottomleft,
+        .corner_bottomright {
+            position: absolute;
+            width: var(--pixel-size);
+            height: var(--pixel-size);
+            background: var(--bg);
+            z-index:2;
+        }
+
+        .corner_topleft {
+            top: calc(var(--pixel-size) * -1);
+            left: calc(var(--pixel-size) * -1);
+        }
+        .corner_topright {
+            top: calc(var(--pixel-size) * -1);
+            right: calc(var(--pixel-size) * -1);
+        }
+        .corner_bottomleft {
+            bottom: calc(var(--pixel-size) * -1);
+            left: calc(var(--pixel-size) * -1);
+        }
+        .corner_bottomright {
+            bottom: calc(var(--pixel-size) * -1);
+            right: calc(var(--pixel-size) * -1);
+        }
+
+        /* Dialogue Box (Restored to minimal/original style, adjust if you had specific styling in your styles.css) */
+        .dialogue-box {
+            position: absolute;
+            bottom: 20px; /* Example position */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: black; /* Example: solid black */
+            border: 1px solid gray; /* Example: simple gray border */
+            padding: 10px;
+            z-index: 100;
+            display: none; /* Hidden by default */
+            font-family: pixel;
+            font-size: 30px;
+        }
+
+        /* NPC/Interactable Outline */
+        .interactable {
+            position: absolute;
+            image-rendering: pixelated;
+            background-repeat: no-repeat;
+            background-size: contain;
+            cursor: url('ping.png'), auto; /* Changed to pointer to indicate clickability */
+            z-index: 5;
+            outline: 2px dashed rgba(255, 255, 0, 0.7); /* Yellow dashed outline for visibility */
+            outline-offset: 2px; /* Push the outline slightly outside */
+        }
+
+        /* EXAMPLE css of npcs and such, how they will be made so that you can just go back to them and modify them.
+        .interactable.npc {
+            width: calc(var(--grid-cell) * 2); 
+            height: calc(var(--grid-cell) * 2); 
+            background-image: url('wurt.png'); 
+            background-position: center bottom;
+        }
+
+        .interactable.bookshelf {
+            width: calc(var(--grid-cell) * 2); 
+            height: calc(var(--grid-cell) * 2); 
+            background-image: url('botib.png'); 
+            background-position: center bottom;
+        }
+
+         */

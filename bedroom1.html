@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialogue and Character Movement</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+            /* Most of the styling is placed in the styles.css file, you can go there and modify stuff. The stuff included here is the customizable
+            stuff that can be changed or is relevant to the scene. */
+           .character_spritesheet {
+            position: absolute;
+            background: url("https://assets.codepen.io/21542/DemoRpgCharacter.png") no-repeat no-repeat;
+            background-size: 100%;
+            width: calc( var(--grid-cell)* 8 );
+            height: calc( var(--grid-cell)* 8 );
+        }
+
+        
+
+        /* Specific styles for NPC and Bookshelf (PLACEHOLDER IMAGES) */
+        .interactable.npc {
+            width: calc(var(--grid-cell) * 2); /* Example size */
+            height: calc(var(--grid-cell) * 2); /* Example size */
+            background-image: url('carpetC.png'); /* **CREATE THIS FILE** */
+            background-position: center bottom;
+        }
+
+        .interactable.bookshelf {
+            width: calc(var(--grid-cell) * 2); /* Example size */
+            height: calc(var(--grid-cell) * 2); /* Example size */
+            background-position: center bottom;
+        }
+
+        .interactable.move {
+             width: calc(var(--grid-cell) * 2); /* Example size */
+            height: calc(var(--grid-cell) * 2); /* Example size */
+            background-image: url('move3.gif');
+            background-position: center bottom;
+            display: none;
+        }
+         .interactable {
+           
+            outline: none;
+           
+        }
+
+         .map {
+            image-rendering: pixelated;
+            background-image: url("bedroom1.png"); /* Ensure this path is correct */
+            background-size: 100%;
+            width: calc(13 * var(--grid-cell));
+            height: calc(10 * var(--grid-cell));
+            position: relative;
+        }
+
+        .shadow {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dialogue-box" id="dialogueBox">
+        <p id="dialogueText"></p>
+        <button class="next-button" id="nextBtn">Next</button>
+    </div>
+
+    <div class="frame">
+        <div class="corner_topleft"></div>
+        <div class="corner_topright"></div>
+        <div class="corner_bottomleft"></div>
+        <div class="corner_bottomright"></div>
+
+        <div class="camera">
+            <div class="map pixel-art" id="map">
+                 <div id="carpet" class="interactable npc" data-name="Old Man" data-x="80" data-y="100"></div>
+                <div class="interactable bookshelf" data-name="Dusty Bookshelf" data-x="200" data-y="50"></div>
+                <div id="move" class="interactable move" data-name="move" data-x="200" data-y="50"></div>
+
+                <div class="character" facing="down" walking="true" id="character">
+                    <div class="shadow pixel-art"></div>
+                    <div class="character_spritesheet pixel-art"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="dialogueSound" src="next.wav" preload="auto"></audio>
+  
+
+    <script>
+        // --- Core Game Variables ---
+        const character = document.getElementById("character");
+        const map = document.getElementById("map");
+        const dialogueBox = document.getElementById("dialogueBox");
+        const dialogueTextContainer = document.getElementById("dialogueText");
+        const nextBtn = document.getElementById("nextBtn");
+        const dialogueSound = document.getElementById("dialogueSound");
+        let onDialogueEndFunction = null;
+
+        // Character position (pixel coordinates on the map)
+        var characterX = -320; // Reverted to var as per original for scope
+        var characterY = 64; // Reverted to var as per original for scope
+        var held_directions = [];
+        var characterSpeed = 0.25; // **REVERTED TO ORIGINAL SPEED**
+
+        let isTyping = false;
+        let currentDialogueIndex = 0;
+        let currentDialogueSet = [];
+        let isDialogueActive = false; // Flag to control game state
+
+        // --- Interactable Data ---
+        const interactablesData = [
+            {
+                name: "Old Man",
+                x: 40, // Pixel X coordinate on the map
+                y: 34, // Pixel Y coordinate on the map
+                width: 40, // Width of interactable area in pixels (adjust if your sprite is different)
+                height: 40, // Height of interactable area in pixels (adjust if your sprite is different)
+                dialogues: [
+                    "Behold.....",
+                    "Behold..... ..... ....",
+                    "For I am.....",
+                    "I AMMMM..... I AMMMMMM",
+                    "The carpet placer",
+                    "*He storms off crying"
+                ],
+                interactionRange: 25, // Distance in pixels to interact;
+                onInteraction: "changeColor"
+            },
+            {
+                name: "Dusty Bookshelf",
+                x: 140,
+                y: 74,
+                width: 40,
+                height: 40,
+                dialogues: [
+                   "That is a COMICALLY large bed"
+
+                ],
+                interactionRange: 40
+            },
+            
+            {
+                name: "move",
+                x: 10,
+                y: 64,
+                width: 32,
+                height: 32,
+                dialogues: [
+                  
+
+                ],
+                interactionRange: 20,
+                onInteraction: "move"
+            },
+
+        ];
+
+           function ChangeColor () {
+            document.getElementById("carpet").remove();
+          
+           }
+
+        function move() {
+            window.location.href = "mainhospital.html"
+        }
+
+            function getInteractionFunction(functionName) {
+            switch (functionName) {
+                case "changeColor":
+                    return ChangeColor;
+                case "move":
+                    return move;
+                default:
+                    return null; // No function to run
+            }
+        }
+
+        // --- Utility Functions ---
+        function getPixelSize() {
+            return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pixel-size'));
+        }
+
+        function calculateDistance(x1, y1, x2, y2) {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // --- Dialogue System ---
+       function startDialogue(dialogueSet, onEndCallback = null) {
+    isDialogueActive = true;
+    currentDialogueSet = dialogueSet;
+    currentDialogueIndex = 0;
+    onDialogueEndFunction = onEndCallback; // Add this line
+    dialogueBox.style.display = 'block';
+    nextDialogueLine();
+}
+        
+
+        function nextDialogueLine() {
+            if (isTyping) {
+                // **PREVENT DIALOGUE SKIPPING:** If text is typing, complete it instantly.
+                clearTimeout(typeTextTimeout);
+                dialogueTextContainer.innerHTML = currentDialogueSet[currentDialogueIndex - 1]; // Show full text
+                isTyping = false;
+                return; // Do not advance to next line or end dialogue yet
+            }
+
+            if (currentDialogueIndex < currentDialogueSet.length) {
+                typeText(currentDialogueSet[currentDialogueIndex]);
+                playDialogueSound();
+                currentDialogueIndex++;
+            } else {
+                // End of dialogue
+                endDialogue();
+            }
+        }
+
+        let typeTextTimeout;
+
+        function typeText(text) {
+            dialogueTextContainer.innerHTML = "";
+            let charIndex = 0;
+            isTyping = true;
+
+            function typeNextChar() {
+                if (charIndex < text.length) {
+                    dialogueTextContainer.innerHTML += text[charIndex];
+                    charIndex++;
+                    typeTextTimeout = setTimeout(typeNextChar, 50); // Typing speed
+                } else {
+                    isTyping = false;
+                }
+            }
+            typeNextChar();
+        }
+
+        function playDialogueSound() {
+            dialogueSound.currentTime = 0;
+            dialogueSound.play().catch(e => console.log("Audio play blocked:", e));
+        }
+
+        function endDialogue() {
+            dialogueBox.style.display = 'none';
+            isDialogueActive = false;
+            currentDialogueSet = [];
+
+            // Check and run the callback function
+    if (onDialogueEndFunction && typeof onDialogueEndFunction === 'function') {
+        onDialogueEndFunction();
+        onDialogueEndFunction = null; // Clear the function after running
+    }
+        }
+
+    
+             // This function will be called when the player interacts with an object
+        function handleInteraction(interactable) {
+            let dialogueSet;
+            const onEndCallback = () => {
+                const functionToCall = getInteractionFunction(interactable.onInteraction);
+                if (functionToCall) {
+                    functionToCall();
+                }
+            };
+            
+            // Check if the object has the new multi-dialogue structure
+            if (interactable.hasOwnProperty('hasInteracted')) {
+                // It's a multi-dialogue object, so use the initial/revisited logic
+                dialogueSet = interactable.hasInteracted ? interactable.dialogues.revisited : interactable.dialogues.initial;
+                
+                // Add the hasInteracted update to the callback
+                const originalCallback = onEndCallback;
+                onEndCallback = () => {
+                    originalCallback();
+                    interactable.hasInteracted = true;
+                };
+
+                // Start the dialogue with the chosen set and the new callback function
+                startDialogue(dialogueSet, onEndCallback);
+
+            } else if (interactable.dialogues && interactable.dialogues.length > 0) {
+                // It's a single-dialogue object (like the toilet), so use the array directly
+                dialogueSet = interactable.dialogues;
+                
+                // Start the dialogue and then call the interaction function
+                startDialogue(dialogueSet, onEndCallback);
+
+            } else if (interactable.onInteraction) {
+                // This is a direct interaction with no dialogue
+                const functionToCall = getInteractionFunction(interactable.onInteraction);
+                if (functionToCall) {
+                    functionToCall();
+                }
+            }
+        }
+
+        nextBtn.addEventListener("click", nextDialogueLine);
+
+        // --- Character Movement & Interaction Loop ---
+        const directions = {
+            up: "up",
+            down: "down",
+            left: "left",
+            right: "right",
+        }
+        const keys = {
+            38: directions.up,
+            37: directions.left,
+            39: directions.right,
+            40: directions.down,
+            87: directions.up,    // W
+            65: directions.left,   // A
+            83: directions.down,   // S
+            68: directions.right,  // D
+            69: "interact" // 'E' key for interaction
+        }
+
+        const placeCharacter = () => {
+            if (isDialogueActive) return; // Prevent movement during dialogue
+
+            var pixelSize = getPixelSize(); // Reverted to var as per original
+
+            const held_direction = held_directions[0];
+            if (held_direction) {
+                if (held_direction === directions.right) { characterX += characterSpeed; }
+                if (held_direction === directions.left) { characterX -= characterSpeed; }
+                if (held_direction === directions.down) { characterY += characterSpeed; }
+                if (held_direction === directions.up) { characterY -= characterSpeed; }
+                character.setAttribute("facing", held_direction);
+            }
+            character.setAttribute("walking", held_direction ? "true" : "false");
+
+            // --- **REVERTED TO ORIGINAL LIMITS** ---
+            var leftLimit = -8;
+            var rightLimit = (16 * 11) + 8;
+            var topLimit = -8 + 32;
+            var bottomLimit = (16 * 7);
+
+            if (characterX < leftLimit) { characterX = leftLimit; }
+            if (characterX > rightLimit) { characterX = rightLimit; }
+            if (characterY < topLimit) { characterY = topLimit; }
+            if (characterY > bottomLimit) { characterY = bottomLimit; }
+
+            // Camera positioning based on character
+            var camera_left = pixelSize * 66;
+            var camera_top = pixelSize * 42;
+
+            map.style.transform = `translate3d( ${-characterX * pixelSize + camera_left}px, ${-characterY * pixelSize + camera_top}px, 0 )`;
+            character.style.transform = `translate3d( ${characterX * pixelSize}px, ${characterY * pixelSize}px, 0 )`;
+        }
+
+        // --- Game Loop ---
+        const step = () => {
+            placeCharacter();
+            window.requestAnimationFrame(() => {
+                step();
+            })
+        }
+        step(); // Kick off the first step!
+
+        // --- Keyboard Input Handling ---
+        document.addEventListener("keydown", (e) => {
+            const dir = keys[e.which];
+
+            if (dir === "interact") { // Always check for interact key
+                if (isDialogueActive) {
+                    // If dialogue is active, "E" acts as "Next" button
+                    nextDialogueLine();
+                } else {
+                    // If no dialogue active, try to interact with world objects
+                    let closestInteractable = null;
+                    let minDistance = Infinity;
+
+                    interactablesData.forEach(obj => {
+                        const objElement = map.querySelector(`[data-name="${obj.name}"]`);
+                        if (objElement) {
+                            // Calculate approximate center of character and object in map pixels
+                            const charCenterX = characterX + (parseInt(getComputedStyle(character).width) / (2 * getPixelSize()));
+                            const charCenterY = characterY + (parseInt(getComputedStyle(character).height) / (2 * getPixelSize()));
+
+                            const objCenterX = obj.x + (obj.width / 2);
+                            const objCenterY = obj.y + (obj.height / 2);
+
+                            const distance = calculateDistance(charCenterX, charCenterY, objCenterX, objCenterY);
+
+                            if (distance <= obj.interactionRange && distance < minDistance) {
+                                minDistance = distance;
+                                closestInteractable = obj;
+                            }
+                        }
+                    });
+
+                    if (closestInteractable) {
+                        handleInteraction(closestInteractable);
+                    }
+                }
+            } else if (dir && held_directions.indexOf(dir) === -1 && !isDialogueActive) {
+                // Only allow movement if no dialogue is active
+                held_directions.unshift(dir);
+            }
+        });
+
+        document.addEventListener("keyup", (e) => {
+            const dir = keys[e.which];
+            const index = held_directions.indexOf(dir);
+            if (index > -1) {
+                held_directions.splice(index, 1);
+            }
+        });
+
+        // --- Initialize Interactable Positions (CSS transform) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const pixelSize = getPixelSize();
+
+            interactablesData.forEach(obj => {
+                const element = map.querySelector(`[data-name="${obj.name}"]`);
+                if (element) {
+                    element.style.left = `${obj.x * pixelSize}px`;
+                    element.style.top = `${obj.y * pixelSize}px`;
+                    element.style.width = `${obj.width * pixelSize}px`;
+                    element.style.height = `${obj.height * pixelSize}px`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

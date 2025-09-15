@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialogue and Character Movement</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+            /* Most of the styling is placed in the styles.css file, you can go there and modify stuff. The stuff included here is the customizable
+            stuff that can be changed or is relevant to the scene. */
+           .character_spritesheet {
+            position: absolute;
+            background: url("https://assets.codepen.io/21542/DemoRpgCharacter.png") no-repeat no-repeat;
+            background-size: 100%;
+            width: calc( var(--grid-cell)* 8 );
+            height: calc( var(--grid-cell)* 8 );
+        }
+
+        
+
+       
+        .interactable.npc {
+            width: calc(var(--grid-cell) * 2);
+            height: calc(var(--grid-cell) * 2);
+            background-image: url('bigg.png'); 
+            background-position: center bottom;
+        }
+
+        .interactable.bookshelf {
+            width: calc(var(--grid-cell) * 2); 
+            height: calc(var(--grid-cell) * 2); 
+            background-image: url('Dmentia.png'); 
+            background-position: center bottom;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="inventory" id="inventory">
+        <div class="item" style="height: 70%; width: 50;" id="hat">
+            <img style="height: 20%;" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR565PWF4UFplkgW9SaXcCdMoBTXyOZ4HDnSA&s">
+            <p>Its a hat what more do you want fuck you man</p>
+        </div>
+    </div>
+
+    <div class="dialogue-box" id="dialogueBox">
+        <p id="dialogueText"></p>
+        <button class="next-button" id="nextBtn">Next</button>
+    </div>
+
+    <div class="frame">
+        <div class="corner_topleft"></div>
+        <div class="corner_topright"></div>
+        <div class="corner_bottomleft"></div>
+        <div class="corner_bottomright"></div>
+
+        <div class="camera">
+            <div class="map pixel-art" id="map">
+                <div class="interactable npc" data-name="Old Man" data-x="80" data-y="100"></div>
+                <div class="interactable bookshelf" data-name="Dusty Bookshelf" data-x="200" data-y="50"></div>
+
+                <div class="character" facing="down" walking="true" id="character">
+                    <div class="shadow pixel-art"></div>
+                    <div class="character_spritesheet pixel-art"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="dialogueSound" src="next.wav" preload="auto"></audio>
+  
+
+    <script>
+        // --- Core Game Variables ---
+        const character = document.getElementById("character");
+        const map = document.getElementById("map");
+        const dialogueBox = document.getElementById("dialogueBox");
+        const dialogueTextContainer = document.getElementById("dialogueText");
+        const nextBtn = document.getElementById("nextBtn");
+        const dialogueSound = document.getElementById("dialogueSound");
+        let onDialogueEndFunction = null;
+
+        
+        var characterX = 90; 
+        var characterY = 34; 
+        var held_directions = [];
+        var characterSpeed = 0.25; 
+
+        let isTyping = false;
+        let currentDialogueIndex = 0;
+        let currentDialogueSet = [];
+        let isDialogueActive = false; 
+
+        // --- Interactable Data ---
+        const interactablesData = [
+            {
+                name: "Old Man",
+                x: 80, 
+                y: 25, 
+                width: 32,
+                height: 32, 
+                dialogues: [
+                    "Hello,         traveler.     The     air is thick with old magic.",  
+                    // you can ADD SPACE!!!!!!!!! to make the character talk slower... that is really freaking cool right??
+                    "Be wary of the whispers in the dark.",
+                    "I have nothing more to say now."
+                ],
+                interactionRange: 25, 
+                onInteraction: "changeColor"
+            },
+            {
+                name: "Dusty Bookshelf",
+                x: 120,
+                y: 25,
+                width: 32,
+                height: 32,
+                dialogues: [
+                    "You examine the bookshelf.",
+                    "Most books are on ancient history, some are on forgotten spells.",
+                    "One book is titled 'The booty warrior by fleece johnson'. You smile."
+                ],
+                interactionRange: 20,
+                onInteraction: "findBook"
+            }
+        ];
+
+            function changeColor() {
+            
+                 const root = document.documentElement;
+            const newColor = 'lightblue';
+
+            // Update the CSS variable --bg on the root element
+            root.style.setProperty('--bg', newColor);
+
+
+            const frame = document.getElementsByClassName('frame')[0];
+            
+            if (frame) {
+                // Get the computed value of the CSS variable --pixel-size
+                const rootStyle = getComputedStyle(document.documentElement);
+                const pixelSize = rootStyle.getPropertyValue('--pixel-size');
+                
+                // Now, use the actual value to set the outline
+                // This ensures the value is a valid CSS length
+                frame.style.outline = `${pixelSize} ridge #fff`;
+            }
+        }
+
+        function findBook() {
+
+        }
+
+
+            function getInteractionFunction(functionName) {
+            switch (functionName) {
+                case "changeColor":
+                    return changeColor;
+                case "findBook":
+                    return findBook;
+                default:
+                    return null; 
+            }
+        }
+
+        // --- Utility Functions ---
+        function getPixelSize() {
+            return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pixel-size'));
+        }
+
+        function calculateDistance(x1, y1, x2, y2) {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // --- Dialogue System ---
+       function startDialogue(dialogueSet, onEndCallback = null) {
+    isDialogueActive = true;
+    currentDialogueSet = dialogueSet;
+    currentDialogueIndex = 0;
+    onDialogueEndFunction = onEndCallback; 
+    dialogueBox.style.display = 'block';
+    nextDialogueLine();
+}
+        
+
+        function nextDialogueLine() {
+            if (isTyping) {
+                // **PREVENT DIALOGUE SKIPPING:** If text is typing, complete it instantly.
+                clearTimeout(typeTextTimeout);
+                dialogueTextContainer.innerHTML = currentDialogueSet[currentDialogueIndex - 1]; // Show full text
+                isTyping = false;             
+                // why are you reading this code lil bro, you are not meant to be here lil bro. I AM GONNA TOUCH YOU.
+                return; // Do not advance to next line or end dialogue yet
+            }
+
+            if (currentDialogueIndex < currentDialogueSet.length) {
+                typeText(currentDialogueSet[currentDialogueIndex]);
+                playDialogueSound();
+                currentDialogueIndex++;
+            } else {
+                // End of dialogue
+                endDialogue();
+            }
+        }
+
+        let typeTextTimeout;
+
+        function typeText(text) {
+            dialogueTextContainer.innerHTML = "";
+            let charIndex = 0;
+            isTyping = true;
+
+            function typeNextChar() {
+                if (charIndex < text.length) {
+                    dialogueTextContainer.innerHTML += text[charIndex];
+                    charIndex++;
+                    typeTextTimeout = setTimeout(typeNextChar, 50); // Typing speed
+                } else {
+                    isTyping = false;
+                }
+            }
+            typeNextChar();
+        }
+
+        function playDialogueSound() {
+            dialogueSound.currentTime = 0;
+            dialogueSound.play().catch(e => console.log("Audio play blocked:", e));
+        }
+
+        function endDialogue() {
+            dialogueBox.style.display = 'none';
+            isDialogueActive = false;
+            currentDialogueSet = [];
+
+            // Check and run the callback function
+    if (onDialogueEndFunction && typeof onDialogueEndFunction === 'function') {
+        onDialogueEndFunction();
+        onDialogueEndFunction = null; // Clear the function after running
+    }
+        }
+
+        
+function handleInteraction(interactable) {
+    
+    const dialogueSet = interactable.dialogues;
+
+    
+    const functionToCall = getInteractionFunction(interactable.onInteraction);
+
+    
+    startDialogue(dialogueSet, functionToCall);
+}
+
+        nextBtn.addEventListener("click", nextDialogueLine);
+
+        // --- Character Movement & Interaction Loop ---
+        const directions = {
+            up: "up",
+            down: "down",
+            left: "left",
+            right: "right",
+        }
+        const keys = {
+            38: directions.up,
+            37: directions.left,
+            39: directions.right,
+            40: directions.down,
+            87: directions.up,    // W
+            65: directions.left,   // A
+            83: directions.down,   // S
+            68: directions.right,  // D
+            69: "interact" // 'E' key for interaction
+        }
+
+        const placeCharacter = () => {
+            if (isDialogueActive) return; // Prevent movement during dialogue
+
+            var pixelSize = getPixelSize(); // Reverted to var as per original
+
+            const held_direction = held_directions[0];
+            if (held_direction) {
+                if (held_direction === directions.right) { characterX += characterSpeed; }
+                if (held_direction === directions.left) { characterX -= characterSpeed; }
+                if (held_direction === directions.down) { characterY += characterSpeed; }
+                if (held_direction === directions.up) { characterY -= characterSpeed; }
+                character.setAttribute("facing", held_direction);
+            }
+            character.setAttribute("walking", held_direction ? "true" : "false");
+
+            
+            var leftLimit = -8;
+            var rightLimit = (16 * 11) + 8;
+            var topLimit = -8 + 32;
+            var bottomLimit = (16 * 7);
+
+            if (characterX < leftLimit) { characterX = leftLimit; }
+            if (characterX > rightLimit) { characterX = rightLimit; }
+            if (characterY < topLimit) { characterY = topLimit; }
+            if (characterY > bottomLimit) { characterY = bottomLimit; }
+
+            // Camera positioning based on character
+            var camera_left = pixelSize * 66;
+            var camera_top = pixelSize * 42;
+
+            map.style.transform = `translate3d( ${-characterX * pixelSize + camera_left}px, ${-characterY * pixelSize + camera_top}px, 0 )`;
+            character.style.transform = `translate3d( ${characterX * pixelSize}px, ${characterY * pixelSize}px, 0 )`;
+        }
+
+        // --- Game Loop ---
+        const step = () => {
+            placeCharacter();
+            window.requestAnimationFrame(() => {
+                step();
+            })
+        }
+        step(); 
+
+        // --- Keyboard Input Handling ---
+        document.addEventListener("keydown", (e) => {
+            const dir = keys[e.which];
+
+            if (dir === "interact") { // Always check for interact key
+                if (isDialogueActive) {
+                    // If dialogue is active, "E" acts as "Next" button
+                    nextDialogueLine();
+                } else {
+                    // If no dialogue active, try to interact with world objects
+                    let closestInteractable = null;
+                    let minDistance = Infinity;
+
+                    interactablesData.forEach(obj => {
+                        const objElement = map.querySelector(`[data-name="${obj.name}"]`);
+                        if (objElement) {
+                            // Calculate approximate center of character and object in map pixels
+                            const charCenterX = characterX + (parseInt(getComputedStyle(character).width) / (2 * getPixelSize()));
+                            const charCenterY = characterY + (parseInt(getComputedStyle(character).height) / (2 * getPixelSize()));
+
+                            const objCenterX = obj.x + (obj.width / 2);
+                            const objCenterY = obj.y + (obj.height / 2);
+
+                            const distance = calculateDistance(charCenterX, charCenterY, objCenterX, objCenterY);
+
+                            if (distance <= obj.interactionRange && distance < minDistance) {
+                                minDistance = distance;
+                                closestInteractable = obj;
+                            }
+                        }
+                    });
+
+                    if (closestInteractable) {
+                        handleInteraction(closestInteractable);
+                    }
+                }
+            } else if (dir && held_directions.indexOf(dir) === -1 && !isDialogueActive) {
+                // Only allow movement if no dialogue is active
+                held_directions.unshift(dir);
+            }
+        });
+
+        document.addEventListener("keyup", (e) => {
+            const dir = keys[e.which];
+            const index = held_directions.indexOf(dir);
+            if (index > -1) {
+                held_directions.splice(index, 1);
+            }
+        });
+
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const pixelSize = getPixelSize();
+
+            interactablesData.forEach(obj => {
+                const element = map.querySelector(`[data-name="${obj.name}"]`);
+                if (element) {
+                    element.style.left = `${obj.x * pixelSize}px`;
+                    element.style.top = `${obj.y * pixelSize}px`;
+                    element.style.width = `${obj.width * pixelSize}px`;
+                    element.style.height = `${obj.height * pixelSize}px`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

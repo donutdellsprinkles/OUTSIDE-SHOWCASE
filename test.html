@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialogue and Character Movement</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+
+        :root {
+            --pixel-size: 2px;
+            --grid-cell: calc( var(--pixel-size) * 16);
+            --bg: black;
+        }
+        @media( min-width: 700px ) {
+            :root {
+                --pixel-size: 3px;
+            }
+        }
+        @media( min-width: 1000px ) {
+            :root {
+                --pixel-size: 4px;
+            }
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars from showing */
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            color: white;
+            position: relative; /* For absolute positioning of dialogue box */
+            background-image: url('vortex.gif');
+            background-size: 100%;
+            background-repeat: no-repeat;
+        }
+
+        .pixel-art {
+            image-rendering: pixelated;
+        }
+
+        .frame {
+            /* This is just for Pen decoration */
+            width: calc(var(--pixel-size) * 160);
+            height: calc(var(--pixel-size) * 144);
+            outline: var(--pixel-size) solid #fff;
+            z-index:1; 
+            position:relative;
+        }
+
+        .camera {
+            width: calc(var(--pixel-size) * 160);
+            height: calc(var(--pixel-size) * 144);
+            overflow: hidden;
+            background: #5290b3;
+            position:relative;
+        }
+
+        .map {
+            image-rendering: pixelated;
+            background-image: url("area.png"); /* Ensure this path is correct */
+            background-size: 100%;
+            width: calc(13 * var(--grid-cell));
+            height: calc(10 * var(--grid-cell));
+            position: relative;
+        }
+
+        .character {
+            width: calc( var(--grid-cell)* 2 );
+            height: calc( var(--grid-cell)* 2 );
+            position: absolute;
+            overflow:hidden;
+        }
+
+        .shadow {
+            width: calc( var(--grid-cell)* 2 );
+            height: calc( var(--grid-cell)* 2 );
+            position: absolute;
+            left:0;
+            top:0;
+            background: url("https://assets.codepen.io/21542/DemoRpgCharacterShadow.png") no-repeat no-repeat;
+            background-size: 100%;
+        }
+
+        .character_spritesheet {
+            position: absolute;
+            background: url("https://assets.codepen.io/21542/DemoRpgCharacter.png") no-repeat no-repeat;
+            background-size: 100%;
+            width: calc( var(--grid-cell)* 8 );
+            height: calc( var(--grid-cell)* 8 );
+        }
+
+        .character[facing="right"] .character_spritesheet {
+            background-position-y: calc( var(--pixel-size) * -32 );
+        }
+        .character[facing="up"] .character_spritesheet {
+            background-position-y: calc( var(--pixel-size) * -64 );
+        }
+        .character[facing="left"] .character_spritesheet {
+            background-position-y: calc( var(--pixel-size) * -96 );
+        }
+        .character[walking="true"] .character_spritesheet {
+            animation: walkAnimation 0.6s steps(4) infinite; 
+        }
+
+        @keyframes walkAnimation {
+            from {
+                transform: translate3d(0%,0%,0);
+            }
+            to {
+                transform: translate3d(-100%,0%,0);
+            }
+        }
+        .corner_topleft,
+        .corner_topright,
+        .corner_bottomleft,
+        .corner_bottomright {
+            position: absolute;
+            width: var(--pixel-size);
+            height: var(--pixel-size);
+            background: var(--bg);
+            z-index:2;
+        }
+
+        .corner_topleft {
+            top: calc(var(--pixel-size) * -1);
+            left: calc(var(--pixel-size) * -1);
+        }
+        .corner_topright {
+            top: calc(var(--pixel-size) * -1);
+            right: calc(var(--pixel-size) * -1);
+        }
+        .corner_bottomleft {
+            bottom: calc(var(--pixel-size) * -1);
+            left: calc(var(--pixel-size) * -1);
+        }
+        .corner_bottomright {
+            bottom: calc(var(--pixel-size) * -1);
+            right: calc(var(--pixel-size) * -1);
+        }
+       
+    </style>
+</head>
+<body>
+    <!-- I really find no use for this inventory system I will just make a better one later. -->
+    <!-- <div class="inventory" id="inventory"> -->
+        <!-- <div class="item" style="height: 70%; width: 50;" id="hat"> -->
+            <!-- <img style="height: 20%;" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR565PWF4UFplkgW9SaXcCdMoBTXyOZ4HDnSA&s"> -->
+            <!-- <p>This inventory syx</p> -->
+        <!-- </div> -->
+    <!-- </div> -->
+
+    <div class="dialogue-box" >
+        <p id="text"></p>
+        <button class="next-button" id="nextBtn">Next</button>
+    </div>
+
+    <div class="frame">
+        <div class="corner_topleft"></div>
+        <div class="corner_topright"></div>
+        <div class="corner_bottomleft"></div>
+        <div class="corner_bottomright"></div>
+        
+        <div class="camera">
+            <div class="map pixel-art">
+                <div class="character" facing="down" walking="true">
+                    <div class="shadow pixel-art"></div>
+                    <div class="character_spritesheet pixel-art"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="dialogueSound" src="next.wav" preload="auto"></audio>
+    <!-- Just gonna link the inventory system here in a different file so its easier to manage. -->
+    <script src="inventory.js"></script>
+    
+    <script>
+       
+        const dialogues = [
+            "You         beg         for         existence..... . . .   .       ... ",
+            "you hear no answer...",
+            "Perhaps it's for the best. (Added for testing)",
+            "The story continues..."
+        ];
+        let index = 0;
+        let textIndex = 0;
+        let textspeed = 50;
+        const textContainer = document.getElementById("text");
+        const nextBtn = document.getElementById("nextBtn");
+        let isTyping = false;
+
+        // Get the audio element from the HTML
+        const dialogueSound = document.getElementById("dialogueSound");
+        // No need for dialogueSound.preload = "auto"; here if already in HTML
+
+        function typeText(text) {
+            textContainer.innerHTML = "";
+            textIndex = 0;
+            isTyping = true;
+
+            function typeNextChar() {
+                if (textIndex < text.length) {
+                    textContainer.innerHTML += text[textIndex];
+                    textIndex++;
+                    setTimeout(typeNextChar, textspeed);
+                } else {
+                    isTyping = false;
+                }
+            }
+            typeNextChar();
+        }
+
+        function playDialogueSound() {
+            dialogueSound.currentTime = 0; // Rewind to start
+            dialogueSound.play()
+               
+        }
+
+        function nextDialogue() {
+           if (isTyping) {
+        return;
+    }
+
+            
+            if (index < dialogues.length) {
+                typeText(dialogues[index]);
+                playDialogueSound(); // Attempt to play sound
+                index++;
+            } else {
+                textContainer.innerHTML = "busses all over the screen... THIS INTERVIEW IS OVER";
+                nextBtn.disabled = true;
+            }
+        }
+
+        nextBtn.addEventListener("click", nextDialogue);
+
+        // Initial display of the first dialogue line.
+        // The sound for this *first* line will likely be blocked by browsers.
+        // It will start playing on the *first user click* of the "Next" button.
+        nextDialogue();
+
+
+        // --- Character Movement Script ---
+        var character = document.querySelector(".character");
+        var map = document.querySelector(".map");
+
+        // Start in the middle of the map
+        var x = 90;
+        var y = 34;
+        var held_directions = []; // State of which arrow keys we are holding down
+        var speed = 0.25; // How fast the character moves in pixels per frame
+
+        const placeCharacter = () => {
+            var pixelSize = parseInt(
+                getComputedStyle(document.documentElement).getPropertyValue('--pixel-size')
+            );
+            
+            const held_direction = held_directions[0];
+            if (held_direction) {
+                if (held_direction === directions.right) {x += speed;}
+                if (held_direction === directions.left) {x -= speed;}
+                if (held_direction === directions.down) {y += speed;}
+                if (held_direction === directions.up) {y -= speed;}
+                character.setAttribute("facing", held_direction);
+            }
+            character.setAttribute("walking", held_direction ? "true" : "false");
+            
+            // Limits (gives the illusion of walls)
+            var leftLimit = -8;
+            var rightLimit = (16 * 11)+8;
+            var topLimit = -8 + 32;
+            var bottomLimit = (16 * 7);
+            if (x < leftLimit) { x = leftLimit; }
+            if (x > rightLimit) { x = rightLimit; }
+            if (y < topLimit) { y = topLimit; }
+            if (y > bottomLimit) { y = bottomLimit; }
+            
+            // Camera positioning based on character
+            var camera_left = pixelSize * 66;
+            var camera_top = pixelSize * 42;
+            
+            map.style.transform = `translate3d( ${-x*pixelSize+camera_left}px, ${-y*pixelSize+camera_top}px, 0 )`;
+            character.style.transform = `translate3d( ${x*pixelSize}px, ${y*pixelSize}px, 0 )`;  
+        }
+
+        // Set up the game loop
+        const step = () => {
+            placeCharacter();
+            window.requestAnimationFrame(() => {
+                step();
+            })
+        }
+        step(); // Kick off the first step!
+
+        /* Direction key state */
+        const directions = {
+            up: "up",
+            down: "down",
+            left: "left",
+            right: "right",
+        }
+        const keys = {
+            38: directions.up,    // Up arrow
+            37: directions.left,  // Left arrow
+            39: directions.right, // Right arrow
+            40: directions.down,  // Down arrow
+        }
+        document.addEventListener("keydown", (e) => {
+            var dir = keys[e.which];
+            if (dir && held_directions.indexOf(dir) === -1) {
+                held_directions.unshift(dir) // Add to the front of the array
+            }
+        })
+
+        document.addEventListener("keyup", (e) => {
+            var dir = keys[e.which];
+            var index = held_directions.indexOf(dir);
+            if (index > -1) {
+                held_directions.splice(index, 1) // Remove from the array
+            }
+        });
+    </script>
+</body>
+</html>

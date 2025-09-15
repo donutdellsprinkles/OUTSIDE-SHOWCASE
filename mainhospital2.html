@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREATMENT CENTER</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .character_spritesheet {
+            position: absolute;
+            background: url("https://assets.codepen.io/21542/DemoRpgCharacter.png") no-repeat no-repeat;
+            background-size: 100%;
+            width: calc( var(--grid-cell)* 8 );
+            height: calc( var(--grid-cell)* 8 );
+        }
+
+        .interactable.npc {
+            width: calc(var(--grid-cell) * 2);
+            height: calc(var(--grid-cell) * 2);
+            background-position: center bottom;
+        }
+
+        .interactable.bookshelf {
+            width: calc(var(--grid-cell) * 2);
+            height: calc(var(--grid-cell) * 2);
+            background-position: center bottom;
+        }
+
+        .interactable.fountain {
+            width: calc(var(--grid-cell) * 2);
+            height: calc(var(--grid-cell) * 2);
+            background-position: center bottom;
+        }
+
+        .interactable.toilet {
+            width: calc(var(--grid-cell) * 2);
+            height: calc(var(--grid-cell) * 2);
+            background-position: center bottom;
+        }
+        .interactable.move {
+            width: calc(var(--grid-cell) * 2);
+            height: calc(var(--grid-cell) * 2);
+            background-position: center bottom;
+        }
+        .interactable {
+            outline: none;
+        }
+
+        .map {
+            image-rendering: pixelated;
+            background-image: url("mainhospital.gif");
+            background-size: 100%;
+            width: calc(13 * var(--grid-cell));
+            height: calc(19.5 * var(--grid-cell));
+            position: relative;
+            background-repeat: no-repeat;
+        }
+
+        .shadow {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dialogue-box" id="dialogueBox">
+        <p id="dialogueText"></p>
+        <button class="next-button" id="nextBtn">Next</button>
+    </div>
+
+    <div class="frame">
+        <div class="corner_topleft"></div>
+        <div class="corner_topright"></div>
+        <div class="corner_bottomleft"></div>
+        <div class="corner_bottomright"></div>
+
+        <div class="camera">
+            <div class="map pixel-art" id="map">
+                <div class="interactable npc" data-name="Old Man" data-x="80" data-y="100"></div>
+                <div class="interactable bookshelf" data-name="Dusty Bookshelf" data-x="200" data-y="50"></div>
+                <div class="interactable fountain" data-name="fountain" data-x="80" data-y="100"></div>
+                <div class="interactable toilet" data-name="toilet" data-x="200" data-y="50"></div>
+                <div class="interactable move" data-name="move" data-x="200" data-y="50"></div>
+
+                <div class="character" facing="down" walking="true" id="character">
+                    <div class="shadow pixel-art"></div>
+                    <div class="character_spritesheet pixel-art"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="dialogueSound" src="next.wav" preload="auto"></audio>
+    
+    <script>
+        const character = document.getElementById("character");
+        const map = document.getElementById("map");
+        const dialogueBox = document.getElementById("dialogueBox");
+        const dialogueTextContainer = document.getElementById("dialogueText");
+        const nextBtn = document.getElementById("nextBtn");
+        const dialogueSound = document.getElementById("dialogueSound");
+        let onDialogueEndFunction = null;
+
+        var characterX = 25;
+        var characterY = 14;
+        var held_directions = [];
+        var characterSpeed = 0.25;
+
+        let isTyping = false;
+        let currentDialogueIndex = 0;
+        let currentDialogueSet = [];
+        let isDialogueActive = false;
+
+        const interactablesData = [
+            {
+                name: "Old Man",
+                x: 0,
+                y: 64,
+                width: 40,
+                height: 40,
+                dialogues: [
+                ],
+                interactionRange: 25,
+                onInteraction: "changeColor"
+            },
+            {
+                name: "Dusty Bookshelf",
+                x: 135,
+                y: 24,
+                width: 40,
+                height: 40,
+                dialogues: [
+                ],
+                interactionRange: 20,
+                onInteraction: "move2"
+            },
+            {
+                name: "fountain",
+                x: 75,
+                y: 74,
+                width: 40,
+                height: 40,
+                dialogues: [
+                ],
+                interactionRange: 20
+            },
+            {
+                name: "toilet",
+                x: 20,
+                y: 24,
+                width: 40,
+                height: 40,
+                dialogues: [
+                ],
+                interactionRange: 20,
+                onInteraction: "flush"
+            },
+            {
+                name: "move",
+                x: 190,
+                y: 84,
+                width: 32,
+                height: 32,
+                dialogues: [
+                ],
+                interactionRange: 20,
+                onInteraction: "move"
+            },
+        ];
+        
+        const obstacles = [
+            {
+                name: "fountain_collision",
+                x: 75,
+                y: 80,
+                width: 60,
+                height: 60
+            }
+        ];
+
+        function ChangeColor () {
+            window.location.href = "toilet.html"
+        }
+
+        function flush() {
+            window.location.href = "patient2.html"
+        }
+
+        function move() {
+            window.location.href = "bedroom1.html"
+        }
+
+        function move2 () {
+            window.location.href = "patient1.html"
+        }
+
+        function getInteractionFunction(functionName) {
+            switch (functionName) {
+                case "changeColor":
+                    return ChangeColor;
+                case "move":
+                    return move;
+                case "move2":
+                    return move2; 
+                case "flush":
+                    return flush;
+                default:
+                    return null;
+            }
+        }
+
+        function getPixelSize() {
+            return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pixel-size'));
+        }
+
+        function calculateDistance(x1, y1, x2, y2) {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        function checkCollision(obj1, obj2) {
+            return (
+                obj1.x < obj2.x + obj2.width &&
+                obj1.x + obj1.width > obj2.x &&
+                obj1.y < obj2.y + obj2.height &&
+                obj1.y + obj1.height > obj2.y
+            );
+        }
+
+        function startDialogue(dialogueSet, onEndCallback = null) {
+            isDialogueActive = true;
+            currentDialogueSet = dialogueSet;
+            currentDialogueIndex = 0;
+            onDialogueEndFunction = onEndCallback;
+            dialogueBox.style.display = 'block';
+            nextDialogueLine();
+        }
+        
+        function nextDialogueLine() {
+            if (isTyping) {
+                clearTimeout(typeTextTimeout);
+                dialogueTextContainer.innerHTML = currentDialogueSet[currentDialogueIndex - 1];
+                isTyping = false;
+                return;
+            }
+
+            if (currentDialogueIndex < currentDialogueSet.length) {
+                typeText(currentDialogueSet[currentDialogueIndex]);
+                playDialogueSound();
+                currentDialogueIndex++;
+            } else {
+                endDialogue();
+            }
+        }
+
+        let typeTextTimeout;
+
+        function typeText(text) {
+            dialogueTextContainer.innerHTML = "";
+            let charIndex = 0;
+            isTyping = true;
+
+            function typeNextChar() {
+                if (charIndex < text.length) {
+                    dialogueTextContainer.innerHTML += text[charIndex];
+                    charIndex++;
+                    typeTextTimeout = setTimeout(typeNextChar, 50);
+                } else {
+                    isTyping = false;
+                }
+            }
+            typeNextChar();
+        }
+
+        function playDialogueSound() {
+            dialogueSound.currentTime = 0;
+            dialogueSound.play().catch(e => console.log("Audio play blocked:", e));
+        }
+
+        function endDialogue() {
+            dialogueBox.style.display = 'none';
+            isDialogueActive = false;
+            currentDialogueSet = [];
+
+            if (onDialogueEndFunction && typeof onDialogueEndFunction === 'function') {
+                onDialogueEndFunction();
+                onDialogueEndFunction = null;
+            }
+        }
+
+        function handleInteraction(interactable) {
+            let dialogueSet;
+            const onEndCallback = () => {
+                const functionToCall = getInteractionFunction(interactable.onInteraction);
+                if (functionToCall) {
+                    functionToCall();
+                }
+            };
+            
+            if (interactable.hasOwnProperty('hasInteracted')) {
+                dialogueSet = interactable.hasInteracted ? interactable.dialogues.revisited : interactable.dialogues.initial;
+                
+                const originalCallback = onEndCallback;
+                onEndCallback = () => {
+                    originalCallback();
+                    interactable.hasInteracted = true;
+                };
+
+                startDialogue(dialogueSet, onEndCallback);
+
+            } else if (interactable.dialogues && interactable.dialogues.length > 0) {
+                dialogueSet = interactable.dialogues;
+                
+                startDialogue(dialogueSet, onEndCallback);
+
+            } else if (interactable.onInteraction) {
+                const functionToCall = getInteractionFunction(interactable.onInteraction);
+                if (functionToCall) {
+                    functionToCall();
+                }
+            }
+        }
+
+        nextBtn.addEventListener("click", nextDialogueLine);
+
+        const directions = {
+            up: "up",
+            down: "down",
+            left: "left",
+            right: "right",
+        }
+        const keys = {
+            38: directions.up,
+            37: directions.left,
+            39: directions.right,
+            40: directions.down,
+            87: directions.up,
+            65: directions.left,
+            83: directions.down,
+            68: directions.right,
+            69: "interact"
+        }
+
+        const placeCharacter = () => {
+            if (isDialogueActive) return;
+
+            var pixelSize = getPixelSize();
+
+            const held_direction = held_directions[0];
+            let newCharacterX = characterX;
+            let newCharacterY = characterY;
+
+            if (held_direction) {
+                if (held_direction === directions.right) { newCharacterX += characterSpeed; }
+                if (held_direction === directions.left) { newCharacterX -= characterSpeed; }
+                if (held_direction === directions.down) { newCharacterY += characterSpeed; }
+                if (held_direction === directions.up) { newCharacterY -= characterSpeed; }
+                character.setAttribute("facing", held_direction);
+            }
+            character.setAttribute("walking", held_direction ? "true" : "false");
+
+            const characterCollisionBox = {
+                x: newCharacterX + 16,
+                y: newCharacterY + 16,
+                width: 8,
+                height: 8
+            };
+
+            let collisionDetected = false;
+            obstacles.forEach(obstacle => {
+                const obstacleCollisionBox = {
+                    x: obstacle.x,
+                    y: obstacle.y,
+                    width: obstacle.width,
+                    height: obstacle.height
+                };
+                if (checkCollision(characterCollisionBox, obstacleCollisionBox)) {
+                    collisionDetected = true;
+                }
+            });
+
+            if (!collisionDetected) {
+                characterX = newCharacterX;
+                characterY = newCharacterY;
+            }
+
+            var leftLimit = -8;
+            var rightLimit = (16 * 11) + 8;
+            var topLimit = -8 + 32;
+            var bottomLimit = 156;
+
+            if (characterX < leftLimit) { characterX = leftLimit; }
+            if (characterX > rightLimit) { characterX = rightLimit; }
+            if (characterY < topLimit) { characterY = topLimit; }
+            if (characterY > bottomLimit) { characterY = bottomLimit; }
+
+            var camera_left = pixelSize * 66;
+            var camera_top = pixelSize * 42;
+
+            map.style.transform = `translate3d( ${-characterX * pixelSize + camera_left}px, ${-characterY * pixelSize + camera_top}px, 0 )`;
+            character.style.transform = `translate3d( ${characterX * pixelSize}px, ${characterY * pixelSize}px, 0 )`;
+        }
+
+        const step = () => {
+            placeCharacter();
+            window.requestAnimationFrame(() => {
+                step();
+            })
+        }
+        step();
+
+        document.addEventListener("keydown", (e) => {
+            const dir = keys[e.which];
+
+            if (dir === "interact") {
+                if (isDialogueActive) {
+                    nextDialogueLine();
+                } else {
+                    let closestInteractable = null;
+                    let minDistance = Infinity;
+
+                    interactablesData.forEach(obj => {
+                        const objElement = map.querySelector(`[data-name="${obj.name}"]`);
+                        if (objElement) {
+                            const charCenterX = characterX + (parseInt(getComputedStyle(character).width) / (2 * getPixelSize()));
+                            const charCenterY = characterY + (parseInt(getComputedStyle(character).height) / (2 * getPixelSize()));
+
+                            const objCenterX = obj.x + (obj.width / 2);
+                            const objCenterY = obj.y + (obj.height / 2);
+
+                            const distance = calculateDistance(charCenterX, charCenterY, objCenterX, objCenterY);
+
+                            if (distance <= obj.interactionRange && distance < minDistance) {
+                                minDistance = distance;
+                                closestInteractable = obj;
+                            }
+                        }
+                    });
+
+                    if (closestInteractable) {
+                        handleInteraction(closestInteractable);
+                    }
+                }
+            } else if (dir && held_directions.indexOf(dir) === -1 && !isDialogueActive) {
+                held_directions.unshift(dir);
+            }
+        });
+
+        document.addEventListener("keyup", (e) => {
+            const dir = keys[e.which];
+            const index = held_directions.indexOf(dir);
+            if (index > -1) {
+                held_directions.splice(index, 1);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const pixelSize = getPixelSize();
+
+            interactablesData.forEach(obj => {
+                const element = map.querySelector(`[data-name="${obj.name}"]`);
+                if (element) {
+                    element.style.left = `${obj.x * pixelSize}px`;
+                    element.style.top = `${obj.y * pixelSize}px`;
+                    element.style.width = `${obj.width * pixelSize}px`;
+                    element.style.height = `${obj.height * pixelSize}px`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

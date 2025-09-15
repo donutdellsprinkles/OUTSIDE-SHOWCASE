@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Game Showcase</title>
+    <style>
+      @font-face {
+        font-family: pico;
+        src: url(PICO-8.ttf);
+      }
+
+      h1 {
+        text-align: center;
+        font-family: pico;
+        font-size: 50px;
+        color: chartreuse;
+      }
+
+      h2 {
+        font-family: pico;
+        color: gold;
+      }
+
+      
+      #one,
+      #two,
+      #three,
+      #four,
+      #five,
+      #six {
+        display: none;
+        color: #fffdd0;
+      }
+
+      h3 {
+        font-family: pico;
+      }
+
+      body {
+        background-color: #4a0404;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <h1>Before you begin playing...</h1>
+      <br />
+      <br />
+      <h2>Press 'E' to proceed.</h2>
+      <br />
+      <br />
+      <h3 id="one">'E' to Interact</h3>
+      <br />
+      <br />
+      <h3 id="two">W A S D or arrow keys to move.</h3>
+      <br />
+      <br />
+      <h3 id="three">
+        Press F11 to go full Screen for the most cohesive experience.
+      </h3>
+      <br />
+      <br />
+      <h3 id="four">
+        This entire game was made and tested mostly on Firefox so if possible go
+        ahead and try it with firefox. Microsoft edge; the latest one also work
+        best
+      </h3>
+      <br />
+      <br />
+      <h3 id="five">
+        You can move your mouse cursor around to search for interactable things.
+        It will change its icon to this <img src="ping.png" />
+      </h3>
+      <br />
+      <br />
+      <h3 id="six">
+        This is still a VERY early rough showcase, so it is not even complete in
+        the slightest way. This is just for testing purposes. Everything is
+        bound to change
+      </h3>
+    </div>
+
+    <script>
+      
+      const contentSections = [
+        document.getElementById('one'),
+        document.getElementById('two'),
+        document.getElementById('three'),
+        document.getElementById('four'),
+        document.getElementById('five'),
+        document.getElementById('six'),
+      ];
+
+      
+      let clickCount = 0;
+
+      document.addEventListener('keydown', (event) => {
+      
+        if (event.key === 'e' || event.key === 'E') {
+        
+          if (clickCount < contentSections.length) {
+            contentSections[clickCount].style.display = 'block';
+            clickCount++; 
+          } else if (clickCount === contentSections.length) {
+            
+            window.location.href = 'bedroom.html';
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
