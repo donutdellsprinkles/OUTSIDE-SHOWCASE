@@ -8,7 +8,7 @@
     <style>
             /* Most of the styling is placed in the styles.css file, you can go there and modify stuff. The stuff included here is the customizable
             stuff that can be changed or is relevant to the scene. */
-           .character_spritesheet {
+            .character_spritesheet {
             position: absolute;
             background: url("https://assets.codepen.io/21542/DemoRpgCharacter.png") no-repeat no-repeat;
             background-size: 100%;
@@ -33,19 +33,19 @@
         }
 
         .interactable.move {
-             width: calc(var(--grid-cell) * 2); /* Example size */
+            width: calc(var(--grid-cell) * 2); /* Example size */
             height: calc(var(--grid-cell) * 2); /* Example size */
             background-image: url('move3.gif');
             background-position: center bottom;
             display: none;
         }
-         .interactable {
-           
+           .interactable {
+            
             outline: none;
-           
+            
         }
 
-         .map {
+           .map {
             image-rendering: pixelated;
             background-image: url("bedroom1.png"); /* Ensure this path is correct */
             background-size: 100%;
@@ -74,20 +74,20 @@
 
         <div class="camera">
             <div class="map pixel-art" id="map">
-                 <div id="carpet" class="interactable npc" data-name="Old Man" data-x="80" data-y="100"></div>
-                <div class="interactable bookshelf" data-name="Dusty Bookshelf" data-x="200" data-y="50"></div>
-                <div id="move" class="interactable move" data-name="move" data-x="200" data-y="50"></div>
+                   <div id="carpet" class="interactable npc" data-name="Old Man" data-x="80" data-y="100"></div>
+                 <div class="interactable bookshelf" data-name="Dusty Bookshelf" data-x="200" data-y="50"></div>
+                 <div id="move" class="interactable move" data-name="move" data-x="200" data-y="50"></div>
 
-                <div class="character" facing="down" walking="true" id="character">
-                    <div class="shadow pixel-art"></div>
-                    <div class="character_spritesheet pixel-art"></div>
-                </div>
+                 <div class="character" facing="down" walking="true" id="character">
+                     <div class="shadow pixel-art"></div>
+                     <div class="character_spritesheet pixel-art"></div>
+                 </div>
             </div>
         </div>
     </div>
 
     <audio id="dialogueSound" src="next.wav" preload="auto"></audio>
-  
+ 
 
     <script>
         // --- Core Game Variables ---
@@ -100,24 +100,24 @@
         let onDialogueEndFunction = null;
 
         // Character position (pixel coordinates on the map)
-        var characterX = -320; // Reverted to var as per original for scope
-        var characterY = 64; // Reverted to var as per original for scope
+        var characterX = -320; 
+        var characterY = 64; 
         var held_directions = [];
-        var characterSpeed = 0.25; // **REVERTED TO ORIGINAL SPEED**
+        var characterSpeed = 80; // Changed to a per-second value for Delta Time
 
         let isTyping = false;
         let currentDialogueIndex = 0;
         let currentDialogueSet = [];
-        let isDialogueActive = false; // Flag to control game state
+        let isDialogueActive = false; 
 
         // --- Interactable Data ---
         const interactablesData = [
             {
                 name: "Old Man",
-                x: 40, // Pixel X coordinate on the map
-                y: 34, // Pixel Y coordinate on the map
-                width: 40, // Width of interactable area in pixels (adjust if your sprite is different)
-                height: 40, // Height of interactable area in pixels (adjust if your sprite is different)
+                x: 40, 
+                y: 34, 
+                width: 40, 
+                height: 40, 
                 dialogues: [
                     "Behold.....",
                     "Behold..... ..... ....",
@@ -126,7 +126,7 @@
                     "The carpet placer",
                     "*He storms off crying"
                 ],
-                interactionRange: 25, // Distance in pixels to interact;
+                interactionRange: 25, 
                 onInteraction: "changeColor"
             },
             {
@@ -159,12 +159,12 @@
         ];
 
            function ChangeColor () {
-            document.getElementById("carpet").remove();
-          
+             document.getElementById("carpet").remove();
+           
            }
 
         function move() {
-            window.location.href = "mainhospital.html"
+             window.location.href = "mainhospital.html"
         }
 
             function getInteractionFunction(functionName) {
@@ -174,7 +174,7 @@
                 case "move":
                     return move;
                 default:
-                    return null; // No function to run
+                    return null; 
             }
         }
 
@@ -191,22 +191,22 @@
 
         // --- Dialogue System ---
        function startDialogue(dialogueSet, onEndCallback = null) {
-    isDialogueActive = true;
-    currentDialogueSet = dialogueSet;
-    currentDialogueIndex = 0;
-    onDialogueEndFunction = onEndCallback; // Add this line
-    dialogueBox.style.display = 'block';
-    nextDialogueLine();
-}
+            isDialogueActive = true;
+            currentDialogueSet = dialogueSet;
+            currentDialogueIndex = 0;
+            onDialogueEndFunction = onEndCallback; 
+            dialogueBox.style.display = 'block';
+            nextDialogueLine();
+        }
         
 
         function nextDialogueLine() {
             if (isTyping) {
                 // **PREVENT DIALOGUE SKIPPING:** If text is typing, complete it instantly.
                 clearTimeout(typeTextTimeout);
-                dialogueTextContainer.innerHTML = currentDialogueSet[currentDialogueIndex - 1]; // Show full text
+                dialogueTextContainer.innerHTML = currentDialogueSet[currentDialogueIndex - 1]; 
                 isTyping = false;
-                return; // Do not advance to next line or end dialogue yet
+                return; 
             }
 
             if (currentDialogueIndex < currentDialogueSet.length) {
@@ -230,7 +230,7 @@
                 if (charIndex < text.length) {
                     dialogueTextContainer.innerHTML += text[charIndex];
                     charIndex++;
-                    typeTextTimeout = setTimeout(typeNextChar, 50); // Typing speed
+                    typeTextTimeout = setTimeout(typeNextChar, 50); 
                 } else {
                     isTyping = false;
                 }
@@ -249,14 +249,14 @@
             currentDialogueSet = [];
 
             // Check and run the callback function
-    if (onDialogueEndFunction && typeof onDialogueEndFunction === 'function') {
-        onDialogueEndFunction();
-        onDialogueEndFunction = null; // Clear the function after running
-    }
+        if (onDialogueEndFunction && typeof onDialogueEndFunction === 'function') {
+            onDialogueEndFunction();
+            onDialogueEndFunction = null; 
+        }
         }
 
     
-             // This function will be called when the player interacts with an object
+            // This function will be called when the player interacts with an object
         function handleInteraction(interactable) {
             let dialogueSet;
             const onEndCallback = () => {
@@ -312,28 +312,32 @@
             39: directions.right,
             40: directions.down,
             87: directions.up,    // W
-            65: directions.left,   // A
-            83: directions.down,   // S
+            65: directions.left,  // A
+            83: directions.down,  // S
             68: directions.right,  // D
             69: "interact" // 'E' key for interaction
         }
+        
+        // --- DELTA TIME VARIABLES ---
+        let lastTime = 0;
 
-        const placeCharacter = () => {
-            if (isDialogueActive) return; // Prevent movement during dialogue
+        const placeCharacter = (deltaTime) => {
+            if (isDialogueActive) return; 
 
-            var pixelSize = getPixelSize(); // Reverted to var as per original
+            var pixelSize = getPixelSize(); 
 
             const held_direction = held_directions[0];
             if (held_direction) {
-                if (held_direction === directions.right) { characterX += characterSpeed; }
-                if (held_direction === directions.left) { characterX -= characterSpeed; }
-                if (held_direction === directions.down) { characterY += characterSpeed; }
-                if (held_direction === directions.up) { characterY -= characterSpeed; }
+                const distanceToMove = characterSpeed * deltaTime;
+                if (held_direction === directions.right) { characterX += distanceToMove; }
+                if (held_direction === directions.left) { characterX -= distanceToMove; }
+                if (held_direction === directions.down) { characterY += distanceToMove; }
+                if (held_direction === directions.up) { characterY -= distanceToMove; }
                 character.setAttribute("facing", held_direction);
             }
             character.setAttribute("walking", held_direction ? "true" : "false");
 
-            // --- **REVERTED TO ORIGINAL LIMITS** ---
+            
             var leftLimit = -8;
             var rightLimit = (16 * 11) + 8;
             var topLimit = -8 + 32;
@@ -353,31 +357,31 @@
         }
 
         // --- Game Loop ---
-        const step = () => {
-            placeCharacter();
-            window.requestAnimationFrame(() => {
-                step();
+        const step = (currentTime) => {
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            placeCharacter(deltaTime);
+            window.requestAnimationFrame((time) => {
+                step(time);
             })
         }
-        step(); // Kick off the first step!
+        step(0); 
 
         // --- Keyboard Input Handling ---
         document.addEventListener("keydown", (e) => {
             const dir = keys[e.which];
 
-            if (dir === "interact") { // Always check for interact key
+            if (dir === "interact") { 
                 if (isDialogueActive) {
-                    // If dialogue is active, "E" acts as "Next" button
                     nextDialogueLine();
                 } else {
-                    // If no dialogue active, try to interact with world objects
                     let closestInteractable = null;
                     let minDistance = Infinity;
 
                     interactablesData.forEach(obj => {
                         const objElement = map.querySelector(`[data-name="${obj.name}"]`);
                         if (objElement) {
-                            // Calculate approximate center of character and object in map pixels
                             const charCenterX = characterX + (parseInt(getComputedStyle(character).width) / (2 * getPixelSize()));
                             const charCenterY = characterY + (parseInt(getComputedStyle(character).height) / (2 * getPixelSize()));
 
@@ -398,7 +402,6 @@
                     }
                 }
             } else if (dir && held_directions.indexOf(dir) === -1 && !isDialogueActive) {
-                // Only allow movement if no dialogue is active
                 held_directions.unshift(dir);
             }
         });
