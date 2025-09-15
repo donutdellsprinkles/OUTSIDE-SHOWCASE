@@ -8,7 +8,7 @@
     <style>
             /* Most of the styling is placed in the styles.css file, you can go there and modify stuff. The stuff included here is the customizable
             stuff that can be changed or is relevant to the scene. */
-           .character_spritesheet {
+            .character_spritesheet {
             position: absolute;
             background: url("https://assets.codepen.io/21542/DemoRpgCharacter.png") no-repeat no-repeat;
             background-size: 100%;
@@ -33,19 +33,19 @@
         }
 
         .interactable.move {
-             width: calc(var(--grid-cell) * 2); 
+            width: calc(var(--grid-cell) * 2); 
             height: calc(var(--grid-cell) * 2); 
             background-image: url('move3.gif');
             background-position: center bottom;
             display: none;
         }
-         .interactable {
-           
+           .interactable {
+            
             outline: none;
-           
+            
         }
 
-         .map {
+           .map {
             image-rendering: pixelated;
             background-image: url("bedroom.png"); 
             background-size: 100%;
@@ -87,7 +87,7 @@
     </div>
 
     <audio id="dialogueSound" src="next.wav" preload="auto"></audio>
-  
+ 
 
     <script>
         // --- Core Game Variables ---
@@ -103,7 +103,7 @@
         var characterX = 320; 
         var characterY = 64; 
         var held_directions = [];
-        var characterSpeed = 0.25; 
+        var characterSpeed = 80; // This is now in pixels per second
 
         let isTyping = false;
         let currentDialogueIndex = 0;
@@ -120,15 +120,15 @@
                 height: 40, 
                 dialogues: [
                   "???: Oh you are alive   yeah you are alive look at you all alive and stuff just living ",
-                  "???: Yknow really popping all those uhhhmmm ummhm mhmm all those like uhhh all those pills was probably not a good idea ...    you almost killed yourself there man    ... wait was that like the point ..... huh.... did you like try killing yourself???? ",
-                  "???: Damn... damn man... man.... dude...  did you actually try killing yourseslf yknow life is worth living and stuff there is like a lot of stuff to live through and experience i am just spitting my mind here but you got like uhmm yeah things wait hold on",
+                  "???: Yknow really popping all those uhhhmmm ummhm mhmm all those like uhhh all those pills was probably not a good idea ...   you almost killed yourself there man    ... wait was that like the point ..... huh.... did you like try killing yourself???? ",
+                  "???: Damn... damn man... man.... dude...   did you actually try killing yourseslf yknow life is worth living and stuff there is like a lot of stuff to live through and experience i am just spitting my mind here but you got like uhmm yeah things wait hold on",
                   "???: oh right I forgot you just woke up from what seemed like a seizure or something right yeah wait hold on",
                   "???: Do you understand the words that are coming out of my mouth    Nod or somethingg yeah like shake your head in a like a uhhh horiz- no wait hold on a vertical yes vertical motion like up and down",
                   "*You show a sign of life",
                   "???: mhmmm I guess thats enough, well you are mostly alive and you are well... Its not really my job to look after whatever goes in your head like in the sense of the electrical impulses themselves but wait hold on I am a doctor so that actually is my job huh yknow",
                   "*Its really REALLY getting too long and awkward",
                   "*He takes a deep breath and pauses for a moment",
-                  "...     ....          ...     ....     .... ",
+                  "...     ....      ...     ....     .... ",
                   "???: Okay lets talk like proper humans",
                   "???: Our reports have shown that you suffered from a type of memory loss, i know sounds very cliche like who is losing their damn memories now what memory do you even have to lose man",
                   "???: anyhow. My Name is Sonsol. I am the sole responsible person for the entire health of the tower. You will find me everywhere fixing everyone up I guess",
@@ -154,7 +154,7 @@
                 width: 40,
                 height: 40,
                 dialogues: [
-                   "That is a COMICALLY large bed"
+                    "That is a COMICALLY large bed"
 
                 ],
                 interactionRange: 40
@@ -176,16 +176,16 @@
 
         ];
 
-           function ChangeColor () {
-            document.getElementById("sonsol").remove();
-            document.getElementById("move").style.display = 'block';
-           }
+            function ChangeColor () {
+             document.getElementById("sonsol").remove();
+             document.getElementById("move").style.display = 'block';
+            }
 
         function move() {
-            window.location.href = "mainhospital.html"
+             window.location.href = "mainhospital.html"
         }
 
-            function getInteractionFunction(functionName) {
+             function getInteractionFunction(functionName) {
             switch (functionName) {
                 case "changeColor":
                     return ChangeColor;
@@ -198,7 +198,7 @@
 
         // --- Utility Functions ---
         function getPixelSize() {
-            return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pixel-size'));
+             return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pixel-size'));
         }
 
         function calculateDistance(x1, y1, x2, y2) {
@@ -208,23 +208,23 @@
         }
 
         // --- Dialogue System ---
-       function startDialogue(dialogueSet, onEndCallback = null) {
-    isDialogueActive = true;
-    currentDialogueSet = dialogueSet;
-    currentDialogueIndex = 0;
-    onDialogueEndFunction = onEndCallback; 
-    dialogueBox.style.display = 'block';
-    nextDialogueLine();
-}
+        function startDialogue(dialogueSet, onEndCallback = null) {
+            isDialogueActive = true;
+            currentDialogueSet = dialogueSet;
+            currentDialogueIndex = 0;
+            onDialogueEndFunction = onEndCallback; 
+            dialogueBox.style.display = 'block';
+            nextDialogueLine();
+        }
         
 
         function nextDialogueLine() {
             if (isTyping) {
-                // **PREVENT DIALOGUE SKIPPING:** If text is typing, complete it instantly.
-                clearTimeout(typeTextTimeout);
-                dialogueTextContainer.innerHTML = currentDialogueSet[currentDialogueIndex - 1]; // Show full text
-                isTyping = false;
-                return; // Do not advance to next line or end dialogue yet
+                 // **PREVENT DIALOGUE SKIPPING:** If text is typing, complete it instantly.
+                 clearTimeout(typeTextTimeout);
+                 dialogueTextContainer.innerHTML = currentDialogueSet[currentDialogueIndex - 1]; // Show full text
+                 isTyping = false;
+                 return; // Do not advance to next line or end dialogue yet
             }
 
             if (currentDialogueIndex < currentDialogueSet.length) {
@@ -232,33 +232,33 @@
                 playDialogueSound();
                 currentDialogueIndex++;
             } else {
-                // End of dialogue
-                endDialogue();
+                 // End of dialogue
+                 endDialogue();
             }
         }
 
         let typeTextTimeout;
 
         function typeText(text) {
-            dialogueTextContainer.innerHTML = "";
-            let charIndex = 0;
-            isTyping = true;
+             dialogueTextContainer.innerHTML = "";
+             let charIndex = 0;
+             isTyping = true;
 
             function typeNextChar() {
-                if (charIndex < text.length) {
-                    dialogueTextContainer.innerHTML += text[charIndex];
-                    charIndex++;
-                    typeTextTimeout = setTimeout(typeNextChar, 50); // Typing speed
-                } else {
-                    isTyping = false;
-                }
+                 if (charIndex < text.length) {
+                     dialogueTextContainer.innerHTML += text[charIndex];
+                     charIndex++;
+                     typeTextTimeout = setTimeout(typeNextChar, 50); // Typing speed
+                 } else {
+                     isTyping = false;
+                 }
             }
             typeNextChar();
         }
 
         function playDialogueSound() {
-            dialogueSound.currentTime = 0;
-            dialogueSound.play().catch(e => console.log("Audio play blocked:", e));
+             dialogueSound.currentTime = 0;
+             dialogueSound.play().catch(e => console.log("Audio play blocked:", e));
         }
 
         function endDialogue() {
@@ -266,15 +266,15 @@
             isDialogueActive = false;
             currentDialogueSet = [];
 
-            // Check and run the callback function
-    if (onDialogueEndFunction && typeof onDialogueEndFunction === 'function') {
-        onDialogueEndFunction();
-        onDialogueEndFunction = null; // Clear the function after running
-    }
+             // Check and run the callback function
+            if (onDialogueEndFunction && typeof onDialogueEndFunction === 'function') {
+                onDialogueEndFunction();
+                onDialogueEndFunction = null; // Clear the function after running
+            }
         }
 
     
-             // This function will be called when the player interacts with an object
+            // This function will be called when the player interacts with an object
         function handleInteraction(interactable) {
             let dialogueSet;
             const onEndCallback = () => {
@@ -296,18 +296,18 @@
                     interactable.hasInteracted = true;
                 };
 
-               
+              
                 startDialogue(dialogueSet, onEndCallback);
 
             } else if (interactable.dialogues && interactable.dialogues.length > 0) {
-                // It's a single-dialogue object so use the array...
+                 // It's a single-dialogue object so use the array...
                 dialogueSet = interactable.dialogues;
                 
-                // Start the dialogue and then call the interaction function
+                 // Start the dialogue and then call the interaction function
                 startDialogue(dialogueSet, onEndCallback);
 
             } else if (interactable.onInteraction) {
-                // This is a direct interaction with no dialogue
+                 // This is a direct interaction with no dialogue
                 const functionToCall = getInteractionFunction(interactable.onInteraction);
                 if (functionToCall) {
                     functionToCall();
@@ -330,23 +330,27 @@
             39: directions.right,
             40: directions.down,
             87: directions.up,    // W
-            65: directions.left,   // A
-            83: directions.down,   // S
+            65: directions.left,  // A
+            83: directions.down,  // S
             68: directions.right,  // D
             69: "interact" // 'E' key for interaction
         }
 
-        const placeCharacter = () => {
+        let lastTime = 0; // NEW: Track the time of the last frame
+
+        const placeCharacter = (deltaTime) => {
             if (isDialogueActive) return; // Prevent movement during dialogue
 
-            var pixelSize = getPixelSize(); // Reverted to var as per original
+            const pixelSize = getPixelSize(); // Reverted to var as per original
 
             const held_direction = held_directions[0];
             if (held_direction) {
-                if (held_direction === directions.right) { characterX += characterSpeed; }
-                if (held_direction === directions.left) { characterX -= characterSpeed; }
-                if (held_direction === directions.down) { characterY += characterSpeed; }
-                if (held_direction === directions.up) { characterY -= characterSpeed; }
+                 // NEW: Multiply speed by deltaTime to make movement consistent
+                const distanceToMove = characterSpeed * deltaTime;
+                if (held_direction === directions.right) { characterX += distanceToMove; }
+                if (held_direction === directions.left) { characterX -= distanceToMove; }
+                if (held_direction === directions.down) { characterY += distanceToMove; }
+                if (held_direction === directions.up) { characterY -= distanceToMove; }
                 character.setAttribute("facing", held_direction);
             }
             character.setAttribute("walking", held_direction ? "true" : "false");
@@ -371,13 +375,18 @@
         }
 
         // --- Game Loop ---
-        const step = () => {
-            placeCharacter();
-            window.requestAnimationFrame(() => {
-                step();
+        const step = (currentTime) => {
+             // NEW: Calculate delta time
+            const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+            lastTime = currentTime;
+
+            placeCharacter(deltaTime);
+            window.requestAnimationFrame((time) => {
+                step(time);
             })
         }
-        step(); 
+        step(0); // Pass 0 as initial time
+        
 
         // --- Keyboard Input Handling ---
         document.addEventListener("keydown", (e) => {
@@ -385,17 +394,17 @@
 
             if (dir === "interact") { // Always check for interact key
                 if (isDialogueActive) {
-                    // If dialogue is active, "E" acts as "Next" button
+                     // If dialogue is active, "E" acts as "Next" button
                     nextDialogueLine();
                 } else {
-                    // If no dialogue active, try to interact with world objects
+                     // If no dialogue active, try to interact with world objects
                     let closestInteractable = null;
                     let minDistance = Infinity;
 
                     interactablesData.forEach(obj => {
                         const objElement = map.querySelector(`[data-name="${obj.name}"]`);
                         if (objElement) {
-                            // Calculate approximate center of character and object in map pixels
+                             // Calculate approximate center of character and object in map pixels
                             const charCenterX = characterX + (parseInt(getComputedStyle(character).width) / (2 * getPixelSize()));
                             const charCenterY = characterY + (parseInt(getComputedStyle(character).height) / (2 * getPixelSize()));
 
@@ -416,7 +425,7 @@
                     }
                 }
             } else if (dir && held_directions.indexOf(dir) === -1 && !isDialogueActive) {
-                // Only allow movement if no dialogue is active
+                 // Only allow movement if no dialogue is active
                 held_directions.unshift(dir);
             }
         });
@@ -429,7 +438,7 @@
             }
         });
 
-       
+        
         document.addEventListener('DOMContentLoaded', () => {
             const pixelSize = getPixelSize();
 
